@@ -1,0 +1,177 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{makeidx}
+\usepackage{graphicx}
+\usepackage{lmodern}
+\usepackage{fourier}
+\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+\author{Laura Martir Beltrán}
+\begin{document}
+\begin{flushleft}
+{\LARGE \textbf{MarBy's Heladería}} \\\vspace{0.3cm}
+\textbf{Informe Escrito}\\
+Laura Martir Beltrán C311
+
+\section*{Introducción:}
+\noindent Este proyecto consiste en la simulación de un sistema de inventario para una heladería que vende varios sabores de helado. El propósito es evaluar diversos elementos relacionados con la gestión de esta para determinar cuál maximiza la ganancia dadas ciertas condiciones de demanda y costo.
+
+\subsection*{Objetivos y metas:}
+Los objetivos para los cuales se realizó la simulación son:
+\begin{itemize}
+\item Verificar el comportamiento del inventario bajo la demanda y entrega.
+\item Medir el impacto de diferentes costos sobre las ganancias netas.
+\item Evaluar el sistema utilizando métricas de rendimiento como ingresos, costos de almacenamiento, costos de pedido y utilidad neta promedio.
+\item Proponer hipótesis sobre la relación entre los parámetros de la tienda y la eficiencia del sistema.
+\end{itemize}
+
+\subsection*{Sistema específico a simular:}
+\noindent Se simula una heladería con un sistema de reabastecimiento que opera bajo la política (s, S). La llegada de los clientes sigue un proceso de Poisson con tasa $\lambda$, y la cantidad demandada por cada cliente es una variable aleatoria con distribución G. El sistema tiene un retardo L en la entrega del pedido, y se considera pérdida de ventas si no hay suficiente inventario para cubrir la demanda.\\
+La variables que describen el problema son:
+\begin{itemize}
+\item \textbf{x}: Cantidad de bolas de helado disponible en el momento de un sabor en específico.
+\item \textbf{y}: Unidades en pedido (aún no recibidas) de un sabor en específico..
+\item \textbf{r}: Costo por bola de helado a vender de un sabor en específico..
+\item \textbf{h}: Costo a pagar por unidad de almacenamiento de un sabor en específico..
+\item \textbf{t}: Tiempo actual de simulación.
+\item \textbf{t0}: Tiempo de llegada del próximo cliente.
+\item \textbf{t1}: Tiempo de llegada del pedido en curso ($\infty$ si no hay pedido) de un sabor en específico..
+\item \textbf{R}: Ingresos acumulados por ventas.
+\item \textbf{C}: Costos acumulados por pedidos.
+\item \textbf{H}: Costos acumulados de almacenamiento de inventario.
+\item \textbf{T}: Tiempo límite de la simulación.
+\end{itemize}
+
+\section*{Detalles de Implementación:}
+Existen dos tipos de eventos en la simulación:
+\begin{itemize}
+\item \textbf{Llega un cliente}:\\\vspace{0.1cm}
+Los clientes llegan a la tienda según la distribución Exponencial con parámetro $\lambda$. Estos compran b bolas de helado de distintos sabores siguiendo una distribución G, en este caso se decidió usar la distribución Poisson con tasa $\lambda$, donde $\lambda$ es el resultado de una variable aleatoria que sigue una distribución uniforme de 0 a 5, esto dice que la media de demanda de bolas de helado entre un cliente y otro está entre 0 y 5.\\
+El costo de almacenamiento por bola de healdo se acumula. Se actualiza el tiempo. Se acumula la ganancia. Se desconta del inventario actual la cantidad de bolas de helado que el cliente compró. Si despues de eso la cantidad de bolas es menor que s, se hace un pedido con la cantidad de bolas que le falta al inventario para ser igual a S (capacidad total). Este pedido llega en un tiempo L, el cual sumado con el tiempo actual es t1.\\
+Finalmente se actualiza t0 para el proximo cliente que vaya a llegar.
+\item \textbf{Llega un pedido}:\\\vspace{0.1cm}
+El tiempo L sigue una distribución Normal con media=2 y varianza=1.5, esto hará que haya más probabilidades de que el pedido demore en venir 2 unidades de tiempo, y menos porbbailidades que demore 0 o 4 unidades de tiempo. El costo de almacenamiento por bola de helado se acumula. Se actualiza el tiempo. Se acumula el costo del pedido. Aumenta el inventario actual. La variable $y$ se reinicia en cero y la variable t1 se reinicia en float(inf).
+\end{itemize}
+La simulación corre de manera que el próximo evento que toca es el que más pronto va a ocurrir, o sea, si t0 < t1 llega un cliente y si t1 < t0 llega un pedido. La simulción no se detiene hasta un tiempo especificado T y retorna un estimado de la ganancia por unidad de tiempo($\frac{R-C-H}{T}$).
+
+\subsection*{Clases:}
+Tenemos la clase \textbf{Product} la cual representa un tipo de producto en específico, en este caso, distinto sabor de helado. Esta contiene:
+\begin{itemize}
+\item \textbf{r}: costo por bola.
+\item \textbf{s}: minima cantidad de bolas antes de hacer un pedido.
+\item \textbf{S}: cantidad total de bolas.
+\item \textbf{x}: cantidad actual de bolas.
+\item \textbf{h}: costo adicional por almacenamiento.
+\item \textbf{c}: funcion que calula el costo total del pedido.
+\item \textbf{order\_price}: costo por unidad del pedido.
+\item \textbf{t1}: tiempo en que llega el siguiente pedido de ese sabor de helado.
+\item \textbf{y}: cantidad de bolas de helado que vienen en el pedido.
+\item metodos simples que se usan en la gestión del producto
+\end{itemize}
+
+Tenemos la clase \textbf{TheShopSimulation2} (dice 2 porque la primera era la versión con un solo sabor de helado, o sea, la clase Product no existía). Esta contiene:
+\begin{itemize}
+\item \textbf{lam}: lambda para la variable aleatoria de llegada de los clientes.
+\item \textbf{T}: tiempo que dura la simulación.
+\item \textbf{kinds\_of\_product}: array que contiene los distintos sabores de helado de la heladería.
+\item functiones \textbf{L},\textbf{ client\_function} y \textbf{amount\_function} que retornan el resultado de sus respectivas variables aleatorias.
+\item \textbf{t}: tiempo actual.
+\item \textbf{t0}: tiempo de arribo de proximo cliente.
+\item \textbf{C}, \textbf{H}, \textbf{R}: que acumulan las ganancias y costos de la heladería.
+\end{itemize}
+
+\section*{Resultados y Experimentos:}
+\subsection*{Es suficiente el inventario actual con respecto a la demanda?}
+Veamos cómo se comporta cada sabor de helado diferete con respecto al tiempo, la llegada de clientes y llegada de pedidos:
+Dado que la tasa de venta de cada sabor es el mismo, se analizará solo un gráfico ya que todos son realtivamente iguales.
+\begin{figure}[!h]
+\centering
+\includegraphics[width=1\textwidth]{producto1.png}
+\caption{Sabor de helado 1}
+\end{figure}
+
+Se puede observar que la heladería casi nunca se queda sin helado disponible para vender y las únicas veces que pierde dinero (veces en las que no se le puede vender el helado que quiere a un cliente) es en los intervalos de tiempo en que la heladería está en espera del pedido que se realizó respecto a ese sabor de helado.
+
+\subsection*{Cómo se comportan las ganancias-pérdidas con el pasar del tiempo?}
+Este gráfico fue generado en un resultado de simulación diferente al anterior (con exactamente los mismos parámetros).
+\begin{figure}[!h]
+\centering
+\includegraphics[width=1\textwidth]{ganancia-perdida1.png}
+\caption{Ganancia-Pérdida}
+\end{figure}
+
+Se puede observar que la ganancia-pérdida está relativamente equilibrada y la ganancia final es positiva, sin embargo...
+
+\subsection*{Qué pasaría si la tasa de demanda de los clientes cambia?}
+Actualmente los precios por bola de helado están distribuidos de la siguiente manera:\\
+\begin{itemize}
+\item Vainilla: 35 pesos
+\item Fresa: 40 pesos
+\item Mantecado: 45 pesos
+\item Almendra: 50 pesos
+\item Chocolate: 55 pesos
+\end{itemize}
+Los clientes se disgustaron muchísimo dados los altos precios, así que su tasa cambió a una exponencial con $\lambda$ = 1.5, esto significa que hay más probabilidades de que el cliente no pida casi helado. Lo que pasó con las ganancias fue triste...
+\begin{figure}[!h]
+\centering
+\includegraphics[width=1\textwidth]{ganancia-perdida2.png}
+\caption{Ganancia-Pérdida luego de que los clientes se molestaron dados los altos precios.}
+\end{figure}
+
+Definitivamente se debe hacer algo para contrarrestar esta pérdida tan abismal (Dios Mío!). \\
+Dado que los clientes casi no compran helado no es lógico mejorar la situación aumentando las cifras de s y S, dado que a pesar de las peticiones de la heladería, los impuestos de almacenamiento y los precios para abastecerla no los van a bajar. Se tienen dos opciones para mejorar las ganancias de la heladería:
+\begin{itemize}
+\item Bajar considerablemente la cantidad total de helado que se va a vender (disminuir s y S)
+\item Aumentar más los precios :)
+\end{itemize}
+
+\subsubsection*{Prueba de hipótesis: Disminuir s y S aumenta las ganancias?}
+Se quiere saber si el promedio de ganancias por unidad de tiempo van a ser mayores que cero con esta alternativa.\\
+Se hacen 100 simulaciones para guardar en una lista los estimadores de las ganancias por unidad de tiempoy se busca el promedio de las ganancias. Se quiere verificar qué distribución sigue la media de las ganancias por unidad de tiempo usando esta alternativa, así que se procede a hacer bootstrapping (BAM). \\
+La distribución queda de la siguiente manera:\\
+\begin{figure}[!h]
+\centering
+\includegraphics[width=1\textwidth]{bootstrap1.png}
+\caption{Distribucióon de la media de ganancias por unidad de tiempo}
+\end{figure}
+Buscamos el intervalo de confianza del 95\%: [3.40, 8.22]\\
+Sea: \\
+H0: $\mu \leq 0$\\
+H1: $\mu > 0$\\
+Como el 0 no se encuentra dentro del intervalo de confianza, podemos rechazar la hipótesis nula y decir que disminuir los valores de s y S sí mejora las ganancias de la heladería.
+
+\subsubsection*{Prueba de hipótesis: Aumentar los precios aumenta las ganancias?}
+Se realiza el mismo procedimiento:\\
+\begin{figure}[!h]
+\centering
+\includegraphics[width=1\textwidth]{bootstrap2.png}
+\caption{Distribucióon de la media de ganancias por unidad de tiempo}
+\end{figure}
+Buscamos el intervalo de confianza del 95\%: [5.65, 9.73]\\
+Sea: \\
+H0: $\mu \leq 0$\\
+H1: $\mu > 0$\\
+Como el 0 no se encuentra dentro del intervalo de confianza, podemos rechazar la hipótesis nula y decir que aumentar los precios sí mejora las ganancias de la heladería.
+
+\section*{Modelo Matemático:}
+\begin{itemize}
+\item Tiempo de llegada del cliente: $t-(1/\lambda)*np.log(u)$.
+\item $u \sim U(0,1)$.
+\item Tasa de helado que los clientes compran: $tasa \sim U(0, 5)$ ó $Exp(1.5)$.
+\item Cantidad de helado que compra un cliente: $D \sim Poisson(tasa)$.
+\item Tiempo que demora en llegar un pedido: $L \sim max(1, N(2, 1.5))$.
+\item Política de reabastecimiento (s, S).
+\item Costo de pedido: c(y, precio) donde c es una función lineal
+\item Costo de almacenamiento: $h * x * \Delta t$
+\item $\Delta t$ = $(t1 ó t0) - t$
+\item Las ventas no no cumplidas se pierden.
+\item El pago del pedido se hace al recibirlo.
+\end{itemize}
+
+\section*{Conclusiones:}
+Se logró implementar un simulador confiable del sistema (s, S) usando eventos discretos. El modelo permitió evaluar el impacto de distintas políticas sobre el desempeño del inventario. Pudimos ver cómo dadas ciertas restricciones de impuestos y comportamientos variados de los clientes varía el desempeño de la heladería y las formas de solucionar las bajas ganancias en esta. Se confirmó el equilibrio entre demanda y almacenamiento.
+\end{flushleft}
+\end{document}
